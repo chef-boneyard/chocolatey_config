@@ -24,30 +24,28 @@ property :value, String
 
 load_current_value do
   require 'rexml/document'
-  element = fetch_config_element(config_key)
-  current_value_does_not_exist! if element.nil?
+  current_val = fetch_config_element(config_key)
+  current_value_does_not_exist! if current_val.nil?
 
-  config_key element['id']
-  value element['value']
+  config_key config_key
+  value current_val
 end
 
 # @param [String] id the config name
-# @return [REXML::Attributes]
+# @return [String] the element's value field
 def fetch_config_element(id)
   config_file = 'C:\ProgramData\chocolatey\config\chocolatey.config'
   raise "Could not find the Chocolatey config at #{config_file}!" unless ::File.exist?(config_file)
 
   contents = REXML::Document.new(::File.read(config_file))
-  data = REXML::XPath.first(contents, "//configs/add[@key=\"#{id}\"]")
-  data ? data.attributes : nil # REXML just returns nil if it can't find anything so avoid an undefined method error
+  data = REXML::XPath.first(contents, "//config/add[@key=\"#{id}\"]")
+  data ? data.attribute('value').to_s : nil # REXML just returns nil if it can't find anything so avoid an undefined method error
 end
 
 action :set do
   raise "#{new_resource}: When adding a Chocolatey config you must pass the 'value' property!" unless new_resource.value
 
   converge_if_changed do
-
-  puts "The command to run is #{choco_cmd('set')}"
     shell_out!(choco_cmd('set'))
   end
 end
@@ -64,7 +62,7 @@ action_class do
   # @param [String] action the name of the action to perform
   # @return [String] the choco config command string
   def choco_cmd(action)
-    cmd = "C:\\ProgramData\\chocolatey\\bin\\choco config #{action} --name \"#{new_resource.config_key}\""
+    cmd = "C:\\ProgramData\\chocolatey\\bin\\choco config #{action} --name #{new_resource.config_key}"
     cmd << " --value #{new_resource.value}" if action == 'set'
     cmd
   end
