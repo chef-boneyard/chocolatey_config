@@ -4,6 +4,8 @@
 
 Provides a chocolatey_config resource for managing Chocolatey configs.
 
+NOTE: This resource shipped in Chef 14.3
+
 ## Requirements
 
 ### Platforms
